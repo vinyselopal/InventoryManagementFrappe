@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-01-11 15:09:04.062308",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_hh6o",
+  "item_code",
+  "name1",
+  "opening_warehouse",
+  "opening_qty",
+  "opening_valuation_rate",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_hh6o",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "label": "Item Code",
+   "unique": 1
+  },
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "opening_warehouse",
+   "fieldtype": "Link",
+   "label": "Opening Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "opening_qty",
+   "fieldtype": "Int",
+   "label": "Opening Qty"
+  },
+  {
+   "fieldname": "opening_valuation_rate",
+   "fieldtype": "Currency",
+   "label": "Opening Valuation Rate"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-01-11 18:10:58.824757",
+ "modified_by": "Administrator",
+ "module": "Inventory Management",
+ "name": "Item",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
