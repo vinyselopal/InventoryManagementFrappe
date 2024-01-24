@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{DD}-{MM}-{YY}-{item_code}",
+ "autoname": "format:{YY}-{MM}-{DD}-{item_code}",
  "creation": "2024-01-11 15:09:04.062308",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -56,7 +56,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-01-22 16:17:42.248752",
+ "modified": "2024-01-24 12:38:47.962988",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Item",

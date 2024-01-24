@@ -22,7 +22,7 @@ class StockEntry(Document):
 		stock_ledger_old_valuation_rates_sum = stock_ledger_entries.select(fn.Sum(Field("valuation_rate") * Field("qty_change")))
 		stock_ledger_ttl_qtys = stock_ledger_entries.select(fn.Sum(stock_ledger_entries.qty_change))
 		new_sle_doc.valuation_rate = (stock_ledger_old_valuation_rates_sum + (item.rate * item.qty)) / (stock_ledger_ttl_qtys + item.qty)
-		
+		print("valuation rate", new_sle_doc.valuation_rate)
 		new_sle_doc.insert()
 
 	def on_submit(self):
