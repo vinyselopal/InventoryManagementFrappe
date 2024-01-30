@@ -3,7 +3,8 @@
 
 from frappe.tests.utils import FrappeTestCase
 import frappe
-from frappe.utils import getdate, today
+from frappe.utils import getdate, today, datetime
+import datetime
 
 class TestStockEntry(FrappeTestCase):
 
@@ -13,51 +14,41 @@ class TestStockEntry(FrappeTestCase):
     
     def tearDown(self):
         frappe.db.rollback()
-        pass
 
     def create_test_parent_child_warehouses(self):
-        parent_warehouse = frappe.get_doc({
-                "doctype": "Warehouse",
-                "warehouse_name": "parent_warehouse"
-            })
-        parent_warehouse.insert()
-        parent_warehouse.submit()
-        print(parent_warehouse)
-        child_warehouse = frappe.get_doc({
-            "doctype": "Warehouse",
-            "warehouse_name": "child_warehouse",
-            "parent_warehouse": "parent_warehouse"
-        })
-        child_warehouse.insert()
-        child_warehouse.submit()
+        parent_warehouse = frappe.new_doc("Warehouse")
+        parent_warehouse.warehouse_name = "parent_warehouse"
+        parent_warehouse.insert(ignore_if_duplicate=True)
+
+        child_warehouse = frappe.new_doc("Warehouse")
+        child_warehouse.warehouse_name = "child_warehouse"
+        child_warehouse.parent_warehouse = "parent_warehouse"
+        child_warehouse.insert(ignore_if_duplicate=True)
 
     def create_test_items(self):
         item1 = frappe.new_doc("Item")
-        item1.update({
-            "item_code": "nord",
-            "opening_warehouse": "child_warehouse",
-            "opening_qty": 30
-        })
+        item1.item_code = "nord"
+        item1.opening_warehouse = "child_warehouse"
+        item1.opening_qty = 30
 
+        item1.insert(ignore_if_duplicate = True)
         item2 = frappe.new_doc("Item")
-        item2.update({
-            "item_code": "boat",
-            "opening_warehouse": "parent_warehouse",
-            "opening_qty": 20
-        })
+        item2.item_code = "boat"
+        item2.opening_warehouse = "parent_warehouse"
+        item2.opening_qty = 20
+
+        item2.insert(ignore_if_duplicate=True)
+        
 
     def create_test_stock_entry_for_transfer(self):
         doc = frappe.new_doc("Stock Entry")    
-        doc.update({
-            "date": getdate("22-01-2024"),
-            "time": "3:15:00",
-            "type": "Transfer",
-        })
+        doc.date = today()
+        doc.type = "Transfer"
 
         doc.append(
             "items",
                 {
-                    "item": today() + "-" + "nord",
+                    "item": datetime.datetime.strftime(datetime.date.today(), '%y-%m-%d') + "-" + "nord",
                     "qty": 1,
                     "rate": 3000,
                     "name": "nord_ledger_entry",
@@ -68,7 +59,7 @@ class TestStockEntry(FrappeTestCase):
         doc.append(
             "items",
                 {
-                    "item": today() + "-" + "boat",
+                    "item": datetime.datetime.strftime(datetime.date.today(), '%y-%m-%d') + "-" + "boat",
                     "qty": 1,
                     "rate": 5000,
                     "name": "boat_ledger_entry",
@@ -76,7 +67,7 @@ class TestStockEntry(FrappeTestCase):
                     "target_Warehouse": "child_warehouse",
                 }
         )
-        doc.insert()
+        doc.insert(ignore_if_duplicate=True)
         doc.submit()
         
     def testStockLedgerEntryFromStockEntry(self):
