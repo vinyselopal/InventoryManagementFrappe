@@ -23,7 +23,7 @@
    "fieldname": "item_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Item Code",
+   "label": "Code",
    "reqd": 1,
    "unique": 1
   },
@@ -51,12 +51,12 @@
   {
    "fieldname": "item_name",
    "fieldtype": "Data",
-   "label": "Item Name"
+   "label": "Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-01-25 15:26:04.014233",
+ "modified": "2024-01-31 17:04:21.382237",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Item",

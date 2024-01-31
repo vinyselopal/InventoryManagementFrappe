@@ -67,7 +67,7 @@
  "modified": "2024-01-22 16:57:04.874160",
  "modified_by": "Administrator",
  "module": "Inventory Management",
- "name": "StockEntryItem",
+ "name": "Stock Entry Item",
  "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [],
