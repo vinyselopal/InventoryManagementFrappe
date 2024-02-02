@@ -42,12 +42,12 @@ class StockEntry(Document):
                 create_sle(item.source_warehouse, item.qty, item)
 
 
-def create_sle(warehouse: str, qty: float, item: dict) -> None:
+def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item.item
     sle.warehouse = warehouse
     sle.qty_change = qty
-    sle.valuation_rate = get_valuation_rate(item)
+    sle.valuation_rate = valuation_rate or get_valuation_rate(item)
     sle.insert()
 
 
