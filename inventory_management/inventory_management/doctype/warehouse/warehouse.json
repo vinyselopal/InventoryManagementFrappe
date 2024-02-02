@@ -78,7 +78,7 @@
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-01-31 17:06:45.801086",
+ "modified": "2024-02-02 12:42:21.891374",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Warehouse",
@@ -101,5 +101,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "warehouse_name"
 }
