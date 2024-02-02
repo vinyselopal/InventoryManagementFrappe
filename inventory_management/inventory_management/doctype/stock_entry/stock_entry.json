@@ -53,7 +53,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-01-31 16:46:44.650452",
+ "modified": "2024-02-01 14:17:17.805436",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Entry",
@@ -75,5 +75,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "type"
 }
