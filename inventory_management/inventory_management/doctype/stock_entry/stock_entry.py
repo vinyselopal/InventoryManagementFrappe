@@ -71,13 +71,13 @@ def get_valuation_rate(item: dict) -> float:
             Sum(StockLedgerEntry.qty_change).as_("qty_change"),
         )
         .where(
-            (StockLedgerEntry.item == item)
+            (StockLedgerEntry.item == item.item)
             & (StockLedgerEntry.docstatus == 1)
         )
     ).run(as_dict=True)
 
     return (
-       (result[0].valuation_rate_sum + (item.rate * item.qty)) / (result[0].qty_change + item.qty)
+       ((result[0].valuation_rate_sum or 0) + (item.rate * item.qty)) / ((result[0].qty_change or 0) + item.qty)
     ) if result else 0
 
 def check_warehouse_balance(warehouse, item, qty):
