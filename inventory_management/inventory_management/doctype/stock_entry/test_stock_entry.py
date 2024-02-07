@@ -6,31 +6,35 @@ import frappe
 from frappe.utils import today
 
 class TestStockEntry(FrappeTestCase):
-    def test_stock_ledger_entry(self):
+    def test_stock_entry(self):
         parent_warehouse, child_warehouse = create_test_parent_child_warehouses()
 
-        item1 = create_test_item(
-            "nord", "child_warehouse", 30
-        )
+        item1 = create_test_item("nord", "child_warehouse", 2, 4000)
 
-        stock_entry_item1 = create_test_sle_item(item1, 1, 3000, child_warehouse, parent_warehouse, "nord_ledger_entry")
+        stock_entry_item1 = {
+            "item": item1.name,
+            "qty": 1,
+            "rate": 3000,
+            "source_warehouse": child_warehouse,
+            "target_warehouse": parent_warehouse,
+            "name": "nord_ledger_entry",
+        }
 
-        item2 = create_test_item(
-            "boat", "parent_warehouse", 20
-        )
+        create_test_stock_entry_for_transfer([stock_entry_item1])
 
-        stock_entry_item2 = create_test_sle_item(item2, 1, 5000, parent_warehouse, child_warehouse, "boat_ledger_entry")
+        all_sles = frappe.db.get_all("Stock Ledger Entry", fields=["valuation_rate", "item", "warehouse", "qty_change"])
 
-        create_test_stock_entry_for_transfer([stock_entry_item1, stock_entry_item2])
+        for sle in all_sles:
+            print("sle", sle.valuation_rate, sle.warehouse, sle.item)
 
-        stock_ledger_entry = frappe.get_doc(
+        sle_valuation_rate = frappe.db.get_value(
             doctype="Stock Ledger Entry",
-            posting_date=frappe.utils.getdate(),
-            item=item1.name,
-            qty_change=1,
+            filters={"item": item1.name},
+            fieldname="valuation_rate",
+            order_by="creation desc",
         )
-        self.assertTrue(stock_ledger_entry)
-        # check actual valuation rate for each SLE
+
+        self.assertEqual(sle_valuation_rate, 5000)
 
 
 def create_test_parent_child_warehouses() -> tuple[str, str]:
@@ -47,27 +51,30 @@ def create_test_parent_child_warehouses() -> tuple[str, str]:
 
 
 def create_test_item(
-    item,
-    opening_warehouse,
-    opening_qty,
+    item, opening_warehouse, opening_qty, opening_valuation_rate
 ) -> dict:
     item_doc = frappe.new_doc("Item")
     item_doc.item_code = item
     item_doc.opening_warehouse = opening_warehouse
     item_doc.opening_qty = opening_qty
+    item_doc.opening_valuation_rate = opening_valuation_rate
     item_doc.insert(ignore_if_duplicate=True)
 
     return item_doc
 
-def create_test_sle_item(item, sle_qty, sle_rate, src_warehouse, target_warehouse, sle_name) -> dict:
+
+def create_test_sle_item(
+    item, sle_qty, sle_rate, src_warehouse, target_warehouse, sle_name
+) -> dict:
     return {
         "item": item.name,
         "qty": sle_qty,
         "rate": sle_rate,
         "source_warehouse": src_warehouse,
         "target_warehouse": target_warehouse,
-        "name": sle_name
+        "name": sle_name,
     }
+
 
 def create_test_stock_entry_for_transfer(stock_entry_items):
     doc = frappe.new_doc("Stock Entry")
@@ -76,7 +83,7 @@ def create_test_stock_entry_for_transfer(stock_entry_items):
 
     for item in stock_entry_items:
         print(item)
-        doc.append("items", item)
+        doc.append("stock_entry_items", item)
 
     doc.insert(ignore_if_duplicate=True)
     doc.submit()

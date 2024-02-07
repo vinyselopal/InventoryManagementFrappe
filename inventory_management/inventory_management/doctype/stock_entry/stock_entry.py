@@ -11,57 +11,64 @@ class StockEntry(Document):
         self.validate_mandatory_warehouses()
 
     def validate_balance_qty(self):
-        for item in self.items:
-            if self.type == "Consume" or self.type == "Transfer":
-                item_warehouse_balance = check_warehouse_balance(item.source_warehouse, item.name, item.qty)
-                return True if item_warehouse_balance > 0 else False
+        if self.type == "Receive":
+            return
+
+        for item in self.stock_entry_items:
+            item_warehouse_balance = check_warehouse_balance(item.source_warehouse, item.name)
+            return True if item_warehouse_balance > 0 else False
 
     def validate_mandatory_warehouses(self):
-        for item in self.items:
+        for item in self.stock_entry_items:
             if (self.type == "Consume" and item.source_warehouse == None):
                 return False
             if (self.type == "Receive" and item.target_warehouse == None):
                 return False
             if (self.type == "Transfer" and (item.source_warehouse == None or item.target_warehouse == None)):
                 return False
-            else: 
+            else:
                 return True
 
     def on_submit(self):
-        for item in self.items:
+        for item_row in self.stock_entry_items:
+            receipt_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, item_row.qty)
+            consume_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, -item_row.qty)
+
             if self.type == "Receive":
-                create_sle(item.target_warehouse, item.qty, item, None)
+                create_sle(item_row.target_warehouse, item_row.qty, item_row.item, receipt_valuation_rate)
 
             elif self.type == "Consume":
-                create_sle(item.source_warehouse, -item.qty, item, None)
+                create_sle(item_row.source_warehouse, -item_row.qty, item_row.item, consume_valuation_rate)
 
             else:
-                create_sle(item.target_warehouse, item.qty, item, None)
-                create_sle(item.source_warehouse, -item.qty, item, None)
+                create_sle(item_row.target_warehouse, item_row.qty, item_row.item, receipt_valuation_rate)
+                create_sle(item_row.source_warehouse, -item_row.qty, item_row.item, consume_valuation_rate)
 
     def on_cancel(self):
-        for item in self.items:
+        for item in self.stock_entry_items:
+            receipt_valuation_rate = get_valuation_rate(item.item, item.rate, item.qty)
+            consume_valuation_rate = get_valuation_rate(item.item, item.rate, -item.qty)
+
             if self.type == "Receive":
-                create_sle(item.target_warehouse, -item.qty, item, None)
+                create_sle(item.target_warehouse, -item.qty, item.item, consume_valuation_rate)
 
             elif self.type == "Consume":
-                create_sle(item.source_warehouse, item.qty, item, None)
+                create_sle(item.source_warehouse, item.qty, item.item, receipt_valuation_rate)
 
             else:
-                create_sle(item.target_warehouse, -item.qty, item, None)
-                create_sle(item.source_warehouse, item.qty, item, None)
-
+                create_sle(item.target_warehouse, -item.qty, item.item, consume_valuation_rate)
+                create_sle(item.source_warehouse, item.qty, item.item, receipt_valuation_rate)
 
 def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
-    sle.item = item.item
+    sle.item = item
     sle.warehouse = warehouse
     sle.qty_change = qty
-    sle.valuation_rate = valuation_rate or get_valuation_rate(item)
+    sle.valuation_rate = valuation_rate
     sle.insert()
 
 
-def get_valuation_rate(item: dict) -> float:
+def get_valuation_rate(item: str, item_rate, item_qty) -> float:
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
 
     result = (
@@ -71,8 +78,7 @@ def get_valuation_rate(item: dict) -> float:
             Sum(StockLedgerEntry.qty_change).as_("qty_change"),
         )
         .where(
-            (StockLedgerEntry.item == item.item)
-            & (StockLedgerEntry.docstatus == 1)
+            (StockLedgerEntry.item == item)
         )
     ).run(as_dict=True)
 
@@ -80,13 +86,12 @@ def get_valuation_rate(item: dict) -> float:
        ((result[0].valuation_rate_sum or 0) + (item.rate * item.qty)) / ((result[0].qty_change or 0) + item.qty)
     ) if result else 0
 
-def check_warehouse_balance(warehouse, item, qty):
+def check_warehouse_balance(warehouse, item):
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
 
     result = (
         frappe.qb.from_(StockLedgerEntry)
         .select(
-            "qty_change",
             Sum(StockLedgerEntry.qty_change).as_("qty_balance")
         )
         .where(
