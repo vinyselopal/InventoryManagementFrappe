@@ -10,7 +10,7 @@
   "date",
   "time",
   "type",
-  "items"
+  "stock_entry_items"
  ],
  "fields": [
   {
@@ -44,16 +44,16 @@
    "options": "Receive\nConsume\nTransfer"
   },
   {
-   "fieldname": "items",
+   "fieldname": "stock_entry_items",
    "fieldtype": "Table",
-   "label": "Items",
+   "label": "stock entry items",
    "options": "Stock Entry Item"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-01 14:17:17.805436",
+ "modified": "2024-02-05 19:22:03.622306",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Entry",
