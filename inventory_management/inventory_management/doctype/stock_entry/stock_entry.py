@@ -5,6 +5,11 @@ import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Sum
 
+
+class MandatoryWarehouseMissing(frappe.ValidationError):
+    pass
+
+
 class StockEntry(Document):
     def validate(self):
         self.validate_balance_qty()
@@ -15,34 +20,78 @@ class StockEntry(Document):
             return
 
         for item in self.stock_entry_items:
-            item_warehouse_balance = check_warehouse_balance(item.source_warehouse, item.name)
-            return True if item_warehouse_balance > 0 else False
+            item_warehouse_balance = check_warehouse_balance(
+                item.source_warehouse, item.name
+            )
+            if item_warehouse_balance > item.qty:
+                frappe.throw(
+                    title="Error",
+                    msg="Warehouse balance lower than requested item quantity",
+                )
 
     def validate_mandatory_warehouses(self):
+        condition_msg_mapping = {
+            "Consume": {
+                "condition": lambda item: item.source_warehouse == None,
+                "msg": "Please provide source warehouse for the items",
+            },
+            "Receive": {
+                "condition": lambda item: item.target_warehouse == None,
+                "msg": "Please provide target warehouse for the items",
+            },
+            "Transfer": {
+                "condition": lambda item: item.source_warehouse == None
+                or item.target_warehouse == None,
+                "msg": "Please provide both source and target warehouses for the items",
+            },
+        }
+
         for item in self.stock_entry_items:
-            if (self.type == "Consume" and item.source_warehouse == None):
-                return False
-            if (self.type == "Receive" and item.target_warehouse == None):
-                return False
-            if (self.type == "Transfer" and (item.source_warehouse == None or item.target_warehouse == None)):
-                return False
-            else:
-                return True
+            if condition_msg_mapping[self.type]["msg"](item):
+                frappe.throw(
+                    title="Error",
+                    msg=condition_msg_mapping[self.type]["condition"],
+                    exc=MandatoryWarehouseMissing,
+                )
 
     def on_submit(self):
         for item_row in self.stock_entry_items:
-            receipt_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, item_row.qty)
-            consume_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, -item_row.qty)
+            receipt_valuation_rate = get_valuation_rate(
+                item_row.item, item_row.rate, item_row.qty
+            )
+            consume_valuation_rate = get_valuation_rate(
+                item_row.item, item_row.rate, -item_row.qty
+            )
 
             if self.type == "Receive":
-                create_sle(item_row.target_warehouse, item_row.qty, item_row.item, receipt_valuation_rate)
+                create_sle(
+                    item_row.target_warehouse,
+                    item_row.qty,
+                    item_row.item,
+                    receipt_valuation_rate,
+                )
 
             elif self.type == "Consume":
-                create_sle(item_row.source_warehouse, -item_row.qty, item_row.item, consume_valuation_rate)
+                create_sle(
+                    item_row.source_warehouse,
+                    -item_row.qty,
+                    item_row.item,
+                    consume_valuation_rate,
+                )
 
             else:
-                create_sle(item_row.target_warehouse, item_row.qty, item_row.item, receipt_valuation_rate)
-                create_sle(item_row.source_warehouse, -item_row.qty, item_row.item, consume_valuation_rate)
+                create_sle(
+                    item_row.target_warehouse,
+                    item_row.qty,
+                    item_row.item,
+                    receipt_valuation_rate,
+                )
+                create_sle(
+                    item_row.source_warehouse,
+                    -item_row.qty,
+                    item_row.item,
+                    consume_valuation_rate,
+                )
 
     def on_cancel(self):
         for item in self.stock_entry_items:
@@ -50,14 +99,29 @@ class StockEntry(Document):
             consume_valuation_rate = get_valuation_rate(item.item, item.rate, -item.qty)
 
             if self.type == "Receive":
-                create_sle(item.target_warehouse, -item.qty, item.item, consume_valuation_rate)
+                create_sle(
+                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate
+                )
 
             elif self.type == "Consume":
-                create_sle(item.source_warehouse, item.qty, item.item, receipt_valuation_rate)
+                create_sle(
+                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate
+                )
 
             else:
-                create_sle(item.target_warehouse, -item.qty, item.item, consume_valuation_rate)
-                create_sle(item.source_warehouse, item.qty, item.item, receipt_valuation_rate)
+                create_sle(
+                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate
+                )
+                create_sle(
+                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate
+                )
+
+
+def validate_item_warehouses(se_items, msg, condition):
+    for item in se_items:
+        if condition(item):
+            frappe.throw(title="Error", msg=msg, exc=MandatoryWarehouseMissing)
+
 
 def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
@@ -74,29 +138,32 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
     result = (
         frappe.qb.from_(StockLedgerEntry)
         .select(
-            Sum(StockLedgerEntry.valuation_rate * StockLedgerEntry.qty_change).as_("valuation_rate_sum"),
+            Sum(StockLedgerEntry.valuation_rate * StockLedgerEntry.qty_change).as_(
+                "valuation_rate_sum"
+            ),
             Sum(StockLedgerEntry.qty_change).as_("qty_change"),
         )
-        .where(
-            (StockLedgerEntry.item == item)
-        )
+        .where((StockLedgerEntry.item == item))
     ).run(as_dict=True)
 
     return (
-       ((result[0].valuation_rate_sum or 0) + (item.rate * item.qty)) / ((result[0].qty_change or 0) + item.qty)
-    ) if result else 0
+        (
+            ((result[0].valuation_rate_sum or 0) + (item_rate * item_qty))
+            / ((result[0].qty_change or 0) + item_qty)
+        )
+        if result
+        else 0
+    )
+
 
 def check_warehouse_balance(warehouse, item):
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
 
     result = (
         frappe.qb.from_(StockLedgerEntry)
-        .select(
-            Sum(StockLedgerEntry.qty_change).as_("qty_balance")
-        )
+        .select(Sum(StockLedgerEntry.qty_change).as_("qty_balance"))
         .where(
-            (StockLedgerEntry.item == item)
-            & (StockLedgerEntry.warehouse == warehouse)
+            (StockLedgerEntry.item == item) & (StockLedgerEntry.warehouse == warehouse)
         )
     ).run(as_dict=True)
 
