@@ -4,8 +4,7 @@
 from frappe.tests.utils import FrappeTestCase
 import frappe
 from frappe.utils import today
-from .stock_entry import MandatoryWarehouseMissing
-
+from .stock_entry import MandatoryWarehouseMissing, NotEnoughQuantity
 
 class TestStockEntry(FrappeTestCase):
     def setUp(self):
@@ -19,14 +18,6 @@ class TestStockEntry(FrappeTestCase):
         parent_warehouse, child_warehouse = create_test_parent_child_warehouses()
 
         item1 = create_test_item("nord", "child_warehouse", 2, 4000)
-
-        all_sles = frappe.db.get_all(
-            "Stock Ledger Entry",
-            fields=["valuation_rate", "item", "warehouse", "qty_change"],
-        )
-
-        for sle in all_sles:
-            print("sle", sle.valuation_rate, sle.warehouse, sle.item)
 
         stock_entry_item1 = {
             "item": item1.name,
@@ -63,6 +54,47 @@ class TestStockEntry(FrappeTestCase):
         with self.assertRaises(MandatoryWarehouseMissing):
             create_test_stock_entry([stock_entry_item1], "Consume")
 
+    def test_invalid_warehouse_for_transfer_stock_entry(self):
+        parent_warehouse, child_warehouse = create_test_parent_child_warehouses()
+
+        item1 = create_test_item("nord", "child_warehouse", 2, 4000)
+
+        stock_entry_item1 = {
+            "item": item1.name,
+            "qty": 1,
+            "rate": 3000,
+            "name": "nord_ledger_entry",
+            "source_warehouse": parent_warehouse
+        }
+
+        with self.assertRaises(MandatoryWarehouseMissing):
+            create_test_stock_entry([stock_entry_item1], "Transfer")
+
+    def test_invalid_qty_balance_validation(self):
+        parent_warehouse, child_warehouse = create_test_parent_child_warehouses()
+
+        item1 = create_test_item("nord", "child_warehouse", 2, 4000)
+
+        stock_entry_item1 = {
+            "item": item1.name,
+            "qty": 1,
+            "rate": 3000,
+            "source_warehouse": child_warehouse,
+            "target_warehouse": parent_warehouse,
+            "name": "nord_ledger_entry",
+        }
+
+        stock_entry_item2 = {
+            "item": item1.name,
+            "qty": 2,
+            "rate": 3000,
+            "source_warehouse": child_warehouse,
+            "target_warehouse": parent_warehouse,
+            "name": "nord_ledger_entry",
+        }
+
+        with self.assertRaises(NotEnoughQuantity):
+            create_test_stock_entry([stock_entry_item1, stock_entry_item2], "Transfer")
 
 def create_test_parent_child_warehouses() -> tuple[str, str]:
     parent_warehouse = frappe.new_doc("Warehouse")
@@ -77,7 +109,6 @@ def create_test_parent_child_warehouses() -> tuple[str, str]:
 
     return parent_warehouse.name, child_warehouse.name
 
-
 def create_test_item(
     item, opening_warehouse, opening_qty, opening_valuation_rate
 ) -> dict:
@@ -89,7 +120,6 @@ def create_test_item(
     item_doc.insert(ignore_if_duplicate=True)
 
     return item_doc
-
 
 def create_test_sle_item(
     item, sle_qty, sle_rate, src_warehouse, target_warehouse, sle_name
@@ -103,14 +133,12 @@ def create_test_sle_item(
         "name": sle_name,
     }
 
-
 def create_test_stock_entry(stock_entry_items, type):
     doc = frappe.new_doc("Stock Entry")
     doc.date = today()
     doc.type = type
 
     for item in stock_entry_items:
-        print(item)
         doc.append("stock_entry_items", item)
 
     doc.insert(ignore_if_duplicate=True)

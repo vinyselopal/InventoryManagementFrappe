@@ -10,6 +10,10 @@ class MandatoryWarehouseMissing(frappe.ValidationError):
     pass
 
 
+class NotEnoughQuantity(frappe.ValidationError):
+    pass
+
+
 class StockEntry(Document):
     def validate(self):
         self.validate_balance_qty()
@@ -21,12 +25,15 @@ class StockEntry(Document):
 
         for item in self.stock_entry_items:
             item_warehouse_balance = check_warehouse_balance(
-                item.source_warehouse, item.name
+                item.source_warehouse, item.item, self.stock_entry_items
             )
-            if item_warehouse_balance > item.qty:
+            print("comparison", item_warehouse_balance, item.qty)
+
+            if item_warehouse_balance < item.qty:
                 frappe.throw(
                     title="Error",
                     msg="Warehouse balance lower than requested item quantity",
+                    exc=NotEnoughQuantity,
                 )
 
     def validate_mandatory_warehouses(self):
@@ -47,14 +54,21 @@ class StockEntry(Document):
         }
 
         for item in self.stock_entry_items:
-            if condition_msg_mapping[self.type]["msg"](item):
+            msg = condition_msg_mapping[self.type]["msg"]
+            condition = condition_msg_mapping[self.type]["condition"](item)
+
+            if condition:
                 frappe.throw(
                     title="Error",
-                    msg=condition_msg_mapping[self.type]["condition"],
+                    msg=msg,
                     exc=MandatoryWarehouseMissing,
                 )
 
+    def before_insert(self):
+        self.stock_entry_items = club_similar_item_rows(self.stock_entry_items)
+
     def on_submit(self):
+
         for item_row in self.stock_entry_items:
             receipt_valuation_rate = get_valuation_rate(
                 item_row.item, item_row.rate, item_row.qty
@@ -117,6 +131,20 @@ class StockEntry(Document):
                 )
 
 
+def club_similar_item_rows(stock_entry_items):
+    for item in stock_entry_items:
+        print("stock entry item in clubing", item.qty)
+    dict_items = {}
+    for item_row in stock_entry_items:
+        if not (item_row.item in dict_items):
+            dict_items[item_row.item] = item_row
+            continue
+        existing_item_row = dict_items[item_row.item]
+        existing_item_row.qty = existing_item_row.qty + item_row.qty
+        stock_entry_items.remove(item_row)
+    return stock_entry_items
+
+
 def validate_item_warehouses(se_items, msg, condition):
     for item in se_items:
         if condition(item):
@@ -156,15 +184,17 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
     )
 
 
-def check_warehouse_balance(warehouse, item):
-    StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
+def check_warehouse_balance(warehouse, item, stock_entry_items):
+    all_sles = frappe.get_all(
+        doctype="Stock Ledger Entry", fields=["qty_change", "item", "warehouse"]
+    )
 
+    StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
     result = (
         frappe.qb.from_(StockLedgerEntry)
         .select(Sum(StockLedgerEntry.qty_change).as_("qty_balance"))
         .where(
             (StockLedgerEntry.item == item) & (StockLedgerEntry.warehouse == warehouse)
         )
-    ).run(as_dict=True)
-
-    return result[0].qty_balance or 0
+    ).run()
+    return result[0][0]
