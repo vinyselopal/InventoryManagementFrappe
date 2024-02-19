@@ -4,7 +4,6 @@
 import frappe
 from frappe import _
 
-
 def execute(filters=None):
 	columns = [
 		{
@@ -23,8 +22,9 @@ def execute(filters=None):
 		}
 	]
 	sle = frappe.qb.DocType("Stock Ledger Entry")
-	data = frappe.qb.from_(sle).select("*")
+	data = frappe.qb.from_(sle).select("*").run(as_dict=True)
 	print("data", data)
+	
 	return columns, data
 
 
