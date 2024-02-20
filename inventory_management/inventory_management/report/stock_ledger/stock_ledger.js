@@ -8,14 +8,12 @@ frappe.query_reports["Stock Ledger"] = {
 			"label": __("Item"),
 			"fieldtype": "Link",
 			"options": "Item",
-			"reqd": 1
 		},
 		{
 			"fieldname":"Warehouse",
 			"label": __("Warehouse"),
 			"fieldtype": "Link",
 			"options": "Warehouse",
-			"reqd": 1
 		},
 	]
 };
