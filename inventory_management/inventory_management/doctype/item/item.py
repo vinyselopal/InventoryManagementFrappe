@@ -3,9 +3,16 @@
 
 # import frappe
 from frappe.model.document import Document
-from ..stock_entry.stock_entry import create_sle, get_valuation_rate
+from ..stock_entry.stock_entry import create_sle
+from ..stock_entry.test_stock_entry import create_test_stock_entry
 
 class Item(Document):
 	def after_insert(self):
-		if self.opening_warehouse and self.opening_qty:
-			create_sle(self.opening_warehouse, self.opening_qty, self, self.opening_valuation_rate)
+		sle_item = {
+			"item": self.name,
+			"qty": self.opening_qty,
+			"rate": self.opening_valuation_rate,
+			"target_warehouse": self.opening_warehouse,
+			"name": self.name,
+    	}
+		create_test_stock_entry([sle_item], "Receive")
