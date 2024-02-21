@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:{YYYY}-{MM}-{DD}-{item_code}",
+ "autoname": "format:{item_code}",
  "creation": "2024-01-11 15:09:04.062308",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -31,17 +31,24 @@
    "fieldname": "opening_warehouse",
    "fieldtype": "Link",
    "label": "Opening Warehouse",
-   "options": "Warehouse"
+   "mandatory_depends_on": "doc.opening_qty || doc.opening_valuation_rate;",
+   "options": "Warehouse",
+   "reqd": 1,
+   "set_only_once": 1
   },
   {
    "fieldname": "opening_qty",
    "fieldtype": "Int",
-   "label": "Opening Qty"
+   "label": "Opening Qty",
+   "mandatory_depends_on": "doc.opening_warehouse || doc.opening_valuation_rate;",
+   "set_only_once": 1
   },
   {
    "fieldname": "opening_valuation_rate",
    "fieldtype": "Currency",
-   "label": "Opening Valuation Rate"
+   "label": "Opening Valuation Rate",
+   "mandatory_depends_on": "doc.opening_warehouse || doc.opening_qty;",
+   "set_only_once": 1
   },
   {
    "fieldname": "description",
@@ -56,7 +63,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-01-31 17:04:21.382237",
+ "modified": "2024-02-21 16:56:55.446603",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Item",
