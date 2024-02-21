@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Sum
-from frappe.utils import today
+from frappe.utils import today, now, get_time
 
 
 class MandatoryWarehouseMissing(frappe.ValidationError):
@@ -155,6 +155,8 @@ def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int) -> N
     sle.warehouse = warehouse
     sle.qty_change = qty
     sle.valuation_rate = valuation_rate
+    sle.posting_date = today()
+    sle.posting_time = now()
     sle.insert()
 
 
@@ -198,5 +200,4 @@ def get_warehouse_balance(warehouse, item, stock_entry_items):
             (StockLedgerEntry.item == item) & (StockLedgerEntry.warehouse == warehouse)
         )
     ).run()
-
     return result[0][0] or 0
