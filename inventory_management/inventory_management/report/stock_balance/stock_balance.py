@@ -3,10 +3,6 @@
 
 import frappe
 from frappe import _
-from inventory_management.inventory_management.doctype.stock_entry.stock_entry import (
-    get_warehouse_balance,
-)
-
 
 def execute(filters=None):
     columns = get_columns(filters)
@@ -57,27 +53,38 @@ def get_data(filters):
     Sle = frappe.qb.DocType("Stock Ledger Entry")
     query = frappe.qb.from_(Sle).select("*")
 
-    if filters.get("To Date") and filters.get("From Date"):
-        query = query.where(Sle.posting_date[filters.from_date : filters.to_date])
+    if filters.get("to_date") and filters.get("from_date"):
+        query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])
 
     for condition in ["Warehouse", "Item"]:
         if filters.get(condition):
             query = query.where((Sle[condition] == filters.get(condition)))
 
-    sles = query.run(as_dict=True, debug=True)
+    sles = get_sles_with_balance_qty(query.run(as_dict=True, debug=True))
 
+    return sles
+
+
+def get_sles_with_balance_qty(sles):
     for sle in sles:
-        prev_sles = frappe.db.get_all(
+        balance_qty = get_balance_qty_for_sle(sle)
+        sle.balance_qty = balance_qty
+
+    return sles
+
+
+def get_balance_qty_for_sle(sle):
+    prev_sles = frappe.db.get_all(
             "Stock Ledger Entry",
             filters={
                 "posting_time": ("<=", sle.posting_time),
                 "item": sle.item,
                 "warehouse": sle.warehouse,
             },
-            fields=["qty_change"],
+            fields=["qty_change", "item", "warehouse"],
         )
-        print("prev_sles", prev_sles)
-        balance_qty = sum(prev_sle.qty_change for prev_sle in prev_sles)
-        sle.balance_qty = balance_qty
 
-    return sles
+    print("prev_sles", prev_sles)
+    balance_qty = sum(prev_sle.qty_change for prev_sle in prev_sles)
+
+    return balance_qty
