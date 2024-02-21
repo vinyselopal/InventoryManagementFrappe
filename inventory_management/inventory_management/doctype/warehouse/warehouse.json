@@ -8,13 +8,14 @@
  "field_order": [
   "section_break_mxma",
   "warehouse_name",
-  "warehouse_contact",
-  "warehouse_location",
+  "is_group",
+  "parent_warehouse",
   "lft",
   "rgt",
-  "is_group",
   "old_parent",
-  "parent_warehouse"
+  "warehouse_contact",
+  "column_break_jveo",
+  "warehouse_location"
  ],
  "fields": [
   {
@@ -73,12 +74,16 @@
    "fieldname": "warehouse_location",
    "fieldtype": "Geolocation",
    "label": "Location"
+  },
+  {
+   "fieldname": "column_break_jveo",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2024-02-02 12:42:21.891374",
+ "modified": "2024-02-21 17:50:01.088963",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Warehouse",

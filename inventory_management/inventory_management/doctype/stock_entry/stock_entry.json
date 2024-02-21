@@ -6,11 +6,12 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_9vod",
-  "amended_from",
+  "type",
+  "stock_entry_items",
+  "column_break_fdcy",
   "date",
   "time",
-  "type",
-  "stock_entry_items"
+  "amended_from"
  ],
  "fields": [
   {
@@ -48,12 +49,16 @@
    "fieldtype": "Table",
    "label": "stock entry items",
    "options": "Stock Entry Item"
+  },
+  {
+   "fieldname": "column_break_fdcy",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-05 19:22:03.622306",
+ "modified": "2024-02-21 17:51:57.930167",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Entry",

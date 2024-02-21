@@ -6,13 +6,16 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "details_tab",
   "section_break_hh6o",
+  "column_break_tdxp",
   "item_code",
   "item_name",
+  "description",
+  "column_break_ivkf",
   "opening_warehouse",
   "opening_qty",
   "opening_valuation_rate",
-  "description",
   "tab_2_tab"
  ],
  "fields": [
@@ -65,11 +68,25 @@
    "fieldname": "tab_2_tab",
    "fieldtype": "Tab Break",
    "label": "Tab 2"
+  },
+  {
+   "fieldname": "details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Details"
+  },
+  {
+   "columns": 2,
+   "fieldname": "column_break_tdxp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ivkf",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-21 17:25:01.282727",
+ "modified": "2024-02-21 17:47:25.400891",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Item",
