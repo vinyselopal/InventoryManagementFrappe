@@ -13,6 +13,5 @@ class Item(Document):
 			"qty": self.opening_qty,
 			"rate": self.opening_valuation_rate,
 			"target_warehouse": self.opening_warehouse,
-			"name": self.name,
     	}
 		create_test_stock_entry([sle_item], "Receive")

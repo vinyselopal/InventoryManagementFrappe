@@ -12,7 +12,8 @@
   "opening_warehouse",
   "opening_qty",
   "opening_valuation_rate",
-  "description"
+  "description",
+  "tab_2_tab"
  ],
  "fields": [
   {
@@ -59,11 +60,16 @@
    "fieldname": "item_name",
    "fieldtype": "Data",
    "label": "Name"
+  },
+  {
+   "fieldname": "tab_2_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tab 2"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-21 16:56:55.446603",
+ "modified": "2024-02-21 17:25:01.282727",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Item",
