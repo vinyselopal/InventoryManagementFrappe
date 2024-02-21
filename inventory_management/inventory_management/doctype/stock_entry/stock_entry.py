@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Sum
+from frappe.utils import today
 
 
 class MandatoryWarehouseMissing(frappe.ValidationError):
@@ -24,10 +25,9 @@ class StockEntry(Document):
             return
 
         for item in self.stock_entry_items:
-            item_warehouse_balance = check_warehouse_balance(
+            item_warehouse_balance = get_warehouse_balance(
                 item.source_warehouse, item.item, self.stock_entry_items
             )
-            print("comparison", item_warehouse_balance, item.qty)
 
             if item_warehouse_balance < item.qty:
                 frappe.throw(
@@ -132,8 +132,6 @@ class StockEntry(Document):
 
 
 def club_similar_item_rows(stock_entry_items):
-    for item in stock_entry_items:
-        print("stock entry item in clubing", item.qty)
     dict_items = {}
     for item_row in stock_entry_items:
         if not (item_row.item in dict_items):
@@ -174,17 +172,20 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
         .where((StockLedgerEntry.item == item))
     ).run(as_dict=True)
 
-    return (
-        (
-            ((result[0].valuation_rate_sum or 0) + (item_rate * item_qty))
-            / ((result[0].qty_change or 0) + item_qty)
+    denominator = (result[0].qty_change or 0) + item_qty
+
+    if not denominator == 0:
+        return (
+            (
+                ((result[0].valuation_rate_sum or 0) + (item_rate * item_qty))
+                / denominator
+            )
+            if result
+            else 0
         )
-        if result
-        else 0
-    )
 
 
-def check_warehouse_balance(warehouse, item, stock_entry_items):
+def get_warehouse_balance(warehouse, item, stock_entry_items):
     all_sles = frappe.get_all(
         doctype="Stock Ledger Entry", fields=["qty_change", "item", "warehouse"]
     )
@@ -197,4 +198,5 @@ def check_warehouse_balance(warehouse, item, stock_entry_items):
             (StockLedgerEntry.item == item) & (StockLedgerEntry.warehouse == warehouse)
         )
     ).run()
-    return result[0][0]
+
+    return result[0][0] or 0
