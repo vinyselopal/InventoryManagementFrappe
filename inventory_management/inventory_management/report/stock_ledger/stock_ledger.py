@@ -38,6 +38,12 @@ def get_columns(filters):
 			"fieldtype": "Currency",
 			"reqd": 1
 		},
+		{
+			"fieldname":"posting_date",
+			"label": _("Posting Date"),
+			"fieldtype": "Date",
+			"reqd": 1
+		},
 
 	]
 	return columns
@@ -46,11 +52,14 @@ def get_data(filters):
 	Sle = frappe.qb.DocType("Stock Ledger Entry")
 	query = frappe.qb.from_(Sle).select("*")
 
+	if filters.get("to_date") and filters.get("from_date"):
+		query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])
 
 	for condition in ["Warehouse", "Item"]:
 		if filters.get(condition):
 			query = query.where((Sle[condition] == filters.get(condition)))
 
 	sles = query.run(as_dict=True, debug=True)
+
 	return sles
 

@@ -16,12 +16,12 @@ frappe.query_reports["Stock Ledger"] = {
 			"options": "Warehouse",
 		},
 		{
-			"fieldname":"to_date",
+			"fieldname":"To Date",
 			"label": __("To Date"),
 			"fieldtype": "Date",
 		},
 		{
-			"fieldname":"from_date",
+			"fieldname":"From Date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
 		},
