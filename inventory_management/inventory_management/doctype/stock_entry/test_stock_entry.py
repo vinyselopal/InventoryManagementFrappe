@@ -3,7 +3,7 @@
 
 from frappe.tests.utils import FrappeTestCase
 import frappe
-from frappe.utils import today
+from frappe.utils import today, now
 from .stock_entry import MandatoryWarehouseMissing, NotEnoughQuantity
 
 class TestStockEntry(FrappeTestCase):
@@ -136,6 +136,7 @@ def create_test_sle_item(
 def create_test_stock_entry(stock_entry_items, type):
     doc = frappe.new_doc("Stock Entry")
     doc.date = today()
+    doc.time = now()
     doc.type = type
 
     for item in stock_entry_items:

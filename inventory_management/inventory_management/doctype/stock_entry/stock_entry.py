@@ -83,6 +83,8 @@ class StockEntry(Document):
                     item_row.qty,
                     item_row.item,
                     receipt_valuation_rate,
+                    self.date,
+                    self.time
                 )
 
             elif self.type == "Consume":
@@ -91,6 +93,8 @@ class StockEntry(Document):
                     -item_row.qty,
                     item_row.item,
                     consume_valuation_rate,
+                    self.date,
+                    self.time
                 )
 
             else:
@@ -99,12 +103,16 @@ class StockEntry(Document):
                     item_row.qty,
                     item_row.item,
                     receipt_valuation_rate,
+                    self.date,
+                    self.time
                 )
                 create_sle(
                     item_row.source_warehouse,
                     -item_row.qty,
                     item_row.item,
                     consume_valuation_rate,
+                    self.date,
+                    self.time
                 )
 
     def on_cancel(self):
@@ -114,20 +122,24 @@ class StockEntry(Document):
 
             if self.type == "Receive":
                 create_sle(
-                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate
+                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate,self.date,
+                    self.time
                 )
 
             elif self.type == "Consume":
                 create_sle(
-                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate
+                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate,self.date,
+                    self.time
                 )
 
             else:
                 create_sle(
-                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate
+                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate,self.date,
+                    self.time
                 )
                 create_sle(
-                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate
+                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate,self.date,
+                    self.time
                 )
 
 
@@ -149,14 +161,14 @@ def validate_item_warehouses(se_items, msg, condition):
             frappe.throw(title="Error", msg=msg, exc=MandatoryWarehouseMissing)
 
 
-def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int) -> None:
+def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int, date: str, time: str) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item
     sle.warehouse = warehouse
     sle.qty_change = qty
     sle.valuation_rate = valuation_rate
-    sle.posting_date = today()
-    sle.posting_time = now()
+    sle.posting_date = date
+    sle.posting_time = time
     sle.insert()
 
 
