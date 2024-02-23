@@ -4,14 +4,15 @@
 import frappe
 from frappe import _
 
+
 def execute(filters=None):
-    columns = get_columns(filters)
+    columns = get_columns()
     data = get_data(filters)
 
     return columns, data
 
 
-def get_columns(filters):
+def get_columns():
     columns = [
         {
             "fieldname": "item",
@@ -30,7 +31,13 @@ def get_columns(filters):
         {
             "fieldname": "qty_change",
             "label": _("Qty Change"),
-            "fieldtype": "Int",
+            "fieldtype": "Float",
+            "reqd": 1,
+        },
+        {
+            "fieldname": "balance_qty",
+            "label": _("Balance Qty"),
+            "fieldtype": "Float",
             "reqd": 1,
         },
         {
@@ -40,23 +47,36 @@ def get_columns(filters):
             "reqd": 1,
         },
         {
-            "fieldname": "balance_qty",
-            "label": _("Balance Qty"),
-            "fieldtype": "Int",
+            "fieldname": "posting_date",
+            "label": _("Date"),
+            "fieldtype": "Date",
+            "reqd": 1,
+        },
+        {
+            "fieldname": "posting_time",
+            "label": _("Time"),
+            "fieldtype": "Time",
             "reqd": 1,
         },
     ]
     return columns
 
 
-def get_data(filters):
+def get_data(filters: dict):
     Sle = frappe.qb.DocType("Stock Ledger Entry")
-    query = frappe.qb.from_(Sle).select("*")
+    query = frappe.qb.from_(Sle).select(
+        Sle.item,
+        Sle.warehouse,
+        Sle.qty_change,
+        Sle.valuation_rate,
+        Sle.posting_date,
+        Sle.posting_time
+	)
 
     if filters.get("to_date") and filters.get("from_date"):
         query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])
 
-    for condition in ["Warehouse", "Item"]:
+    for condition in ["warehouse", "item"]:
         if filters.get(condition):
             query = query.where((Sle[condition] == filters.get(condition)))
 
@@ -65,7 +85,7 @@ def get_data(filters):
     return sles
 
 
-def get_sles_with_balance_qty(sles):
+def get_sles_with_balance_qty(sles: list):
     for sle in sles:
         balance_qty = get_balance_qty_for_sle(sle)
         sle.balance_qty = balance_qty
@@ -73,18 +93,17 @@ def get_sles_with_balance_qty(sles):
     return sles
 
 
-def get_balance_qty_for_sle(sle):
+def get_balance_qty_for_sle(sle: dict) -> float:
     prev_sles = frappe.db.get_all(
-            "Stock Ledger Entry",
-            filters={
-                "posting_time": ("<=", sle.posting_time),
-                "item": sle.item,
-                "warehouse": sle.warehouse,
-            },
-            fields=["qty_change", "item", "warehouse"],
-        )
+        "Stock Ledger Entry",
+        filters={
+            "posting_time": ("<=", sle.posting_time),
+            "item": sle.item,
+            "warehouse": sle.warehouse,
+        },
+        fields=["qty_change", "item", "warehouse"],
+    )
 
-    print("prev_sles", prev_sles)
     balance_qty = sum(prev_sle.qty_change for prev_sle in prev_sles)
 
     return balance_qty

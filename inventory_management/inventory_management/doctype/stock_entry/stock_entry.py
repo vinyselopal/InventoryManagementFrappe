@@ -4,14 +4,13 @@
 import frappe
 from frappe.model.document import Document
 from frappe.query_builder.functions import Sum
-from frappe.utils import today, now, get_time
 
 
 class MandatoryWarehouseMissing(frappe.ValidationError):
     pass
 
 
-class NotEnoughQuantity(frappe.ValidationError):
+class InsufficientItems(frappe.ValidationError):
     pass
 
 
@@ -24,51 +23,73 @@ class StockEntry(Document):
         if self.type == "Receive":
             return
 
-        for item in self.stock_entry_items:
-            item_warehouse_balance = get_warehouse_balance(
-                item.source_warehouse, item.item, self.stock_entry_items
+        for item_row in self.stock_entry_items:
+            item_warehouse_balance = get_item_balance_for_warehouse(
+                item_row.source_warehouse, item_row.item, self.stock_entry_items
             )
 
-            if item_warehouse_balance < item.qty:
+            if item_warehouse_balance < item_row.qty:
                 frappe.throw(
                     title="Error",
                     msg="Warehouse balance lower than requested item quantity",
-                    exc=NotEnoughQuantity,
+                    exc=InsufficientItems,
                 )
 
     def validate_mandatory_warehouses(self):
-        condition_msg_mapping = {
-            "Consume": {
-                "condition": lambda item: item.source_warehouse == None,
-                "msg": "Please provide source warehouse for the items",
-            },
-            "Receive": {
-                "condition": lambda item: item.target_warehouse == None,
-                "msg": "Please provide target warehouse for the items",
-            },
-            "Transfer": {
-                "condition": lambda item: item.source_warehouse == None
-                or item.target_warehouse == None,
-                "msg": "Please provide both source and target warehouses for the items",
-            },
-        }
+        for item_row in self.stock_entry_items:
+            if self.type == "Consume":
+                if item_row.source_warehouse == None:
+                    frappe.throw(
+                        title="Error",
+                        msg="Please provide source warehouse for the items",
+                        exc=MandatoryWarehouseMissing,
+                    )
+            if self.type == "Receive":
+                if item_row.target_warehouse == None:
+                    frappe.throw(
+                        title="Error",
+                        msg="Please provide target warehouse for the items",
+                        exc=MandatoryWarehouseMissing,
+                    )
+            if self.type == "Transfer":
+                if item_row.target_warehouse == None or item_row.source_warehouse == None:
+                    frappe.throw(
+                        title="Error",
+                        msg="Please provide both source and target warehouses for the items",
+                        exc=MandatoryWarehouseMissing,
+                    )
 
-        for item in self.stock_entry_items:
-            msg = condition_msg_mapping[self.type]["msg"]
-            condition = condition_msg_mapping[self.type]["condition"](item)
+    def club_similar_item_rows(self, type: str) -> None:
+        item_warehouse_combination_mapping = {}
 
-            if condition:
-                frappe.throw(
-                    title="Error",
-                    msg=msg,
-                    exc=MandatoryWarehouseMissing,
+        def add_to_dict(item_warehouse_combination_mapping, key):
+            current_combination = key
+            if not (current_combination in item_warehouse_combination_mapping):
+                item_warehouse_combination_mapping[current_combination] = item_row
+                return
+            existing_item_row = item_warehouse_combination_mapping[current_combination]
+            existing_item_row.qty = existing_item_row.qty + item_row.qty
+            self.stock_entry_items.remove(item_row)
+
+        for item_row in self.stock_entry_items:
+            if type == "Consume":
+                add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.source_warehouse))
+            if type == "Receive":
+                add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.target_warehouse))
+            if type == "Transfer":
+                add_to_dict(
+                    item_warehouse_combination_mapping,
+                    (
+                        item_row.item,
+                        item_row.source_warehouse,
+                        item_row.target_warehouse,
+                    ),
                 )
 
     def before_insert(self):
-        club_similar_item_rows()
+        self.club_similar_item_rows(self.type)
 
     def on_submit(self):
-
         for item_row in self.stock_entry_items:
             receipt_valuation_rate = get_valuation_rate(
                 item_row.item, item_row.rate, item_row.qty
@@ -84,7 +105,7 @@ class StockEntry(Document):
                     item_row.item,
                     receipt_valuation_rate,
                     self.date,
-                    self.time
+                    self.time,
                 )
 
             elif self.type == "Consume":
@@ -94,7 +115,7 @@ class StockEntry(Document):
                     item_row.item,
                     consume_valuation_rate,
                     self.date,
-                    self.time
+                    self.time,
                 )
 
             else:
@@ -104,7 +125,7 @@ class StockEntry(Document):
                     item_row.item,
                     receipt_valuation_rate,
                     self.date,
-                    self.time
+                    self.time,
                 )
                 create_sle(
                     item_row.source_warehouse,
@@ -112,51 +133,56 @@ class StockEntry(Document):
                     item_row.item,
                     consume_valuation_rate,
                     self.date,
-                    self.time
+                    self.time,
                 )
 
-    def club_similar_item_rows():
-        dict_items = {}
-        for item_row in self.stock_entry_items:
-            current_item_warehouse_pair = (item_row.item, item_row.warehouse)
-            if not (current_item_warehouse_pair in dict_items):
-                dict_items[current_item_warehouse_pair] = item_row
-                continue
-            existing_item_row = dict_items[current_item_warehouse_pair]
-            existing_item_row.qty = existing_item_row.qty + item_row.qty
-            self.stock_entry_items.remove(item_row)
-
     def on_cancel(self):
-        for item in self.stock_entry_items:
-            receipt_valuation_rate = get_valuation_rate(item.item, item.rate, item.qty)
-            consume_valuation_rate = get_valuation_rate(item.item, item.rate, -item.qty)
+        for item_row in self.stock_entry_items:
+            receipt_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, item_row.qty)
+            consume_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, -item_row.qty)
 
             if self.type == "Receive":
                 create_sle(
-                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate,self.date,
-                    self.time
+                    item_row.target_warehouse,
+                    -item_row.qty,
+                    item_row.item,
+                    consume_valuation_rate,
+                    self.date,
+                    self.time,
                 )
 
             elif self.type == "Consume":
                 create_sle(
-                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate,self.date,
-                    self.time
+                    item_row.source_warehouse,
+                    item_row.qty,
+                    item_row.item,
+                    receipt_valuation_rate,
+                    self.date,
+                    self.time,
                 )
 
             else:
                 create_sle(
-                    item.target_warehouse, -item.qty, item.item, consume_valuation_rate,self.date,
-                    self.time
+                    item_row.target_warehouse,
+                    -item_row.qty,
+                    item_row.item,
+                    consume_valuation_rate,
+                    self.date,
+                    self.time,
                 )
                 create_sle(
-                    item.source_warehouse, item.qty, item.item, receipt_valuation_rate,self.date,
-                    self.time
+                    item_row.source_warehouse,
+                    item_row.qty,
+                    item_row.item,
+                    receipt_valuation_rate,
+                    self.date,
+                    self.time,
                 )
 
 
-
-
-def create_sle(warehouse: str, qty: float, item: str, valuation_rate: int, date: str, time: str) -> None:
+def create_sle(
+    warehouse: str, qty: float, item: str, valuation_rate: int, date: str, time: str
+) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item
     sle.warehouse = warehouse
@@ -167,7 +193,7 @@ def create_sle(warehouse: str, qty: float, item: str, valuation_rate: int, date:
     sle.insert()
 
 
-def get_valuation_rate(item: str, item_rate, item_qty) -> float:
+def get_valuation_rate(item: str, item_rate: float, item_qty: float) -> float:
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
 
     result = (
@@ -183,20 +209,18 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
 
     total_qty = (result[0].qty_change or 0) + item_qty
 
-    if not denominator == 0:
+    if not total_qty == 0:
         return (
-            (
-                ((result[0].valuation_rate_sum or 0) + (item_rate * item_qty))
-                / total_qty
-            )
+            (((result[0].valuation_rate_sum or 0) + (item_rate * item_qty)) / total_qty)
             if result
             else 0
         )
 
 
-def get_warehouse_balance(warehouse, item, stock_entry_items):
+def get_item_balance_for_warehouse(warehouse: str, item: str) -> float :
 
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
+
     result = (
         frappe.qb.from_(StockLedgerEntry)
         .select(Sum(StockLedgerEntry.qty_change).as_("qty_balance"))
@@ -204,4 +228,5 @@ def get_warehouse_balance(warehouse, item, stock_entry_items):
             (StockLedgerEntry.item == item) & (StockLedgerEntry.warehouse == warehouse)
         )
     ).run()
+
     return result[0][0] or 0

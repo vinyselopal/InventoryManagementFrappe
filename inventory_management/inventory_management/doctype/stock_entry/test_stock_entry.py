@@ -4,7 +4,7 @@
 from frappe.tests.utils import FrappeTestCase
 import frappe
 from frappe.utils import today, now
-from .stock_entry import MandatoryWarehouseMissing, NotEnoughQuantity
+from .stock_entry import MandatoryWarehouseMissing, InsufficientItems
 
 class TestStockEntry(FrappeTestCase):
     def setUp(self):
@@ -93,7 +93,7 @@ class TestStockEntry(FrappeTestCase):
             "name": "nord_ledger_entry",
         }
 
-        with self.assertRaises(NotEnoughQuantity):
+        with self.assertRaises(InsufficientItems):
             create_test_stock_entry([stock_entry_item1, stock_entry_item2], "Transfer")
 
 def create_test_parent_child_warehouses() -> tuple[str, str]:
@@ -110,7 +110,7 @@ def create_test_parent_child_warehouses() -> tuple[str, str]:
     return parent_warehouse.name, child_warehouse.name
 
 def create_test_item(
-    item, opening_warehouse, opening_qty, opening_valuation_rate
+    item: str, opening_warehouse: str, opening_qty: float, opening_valuation_rate: float
 ) -> dict:
     item_doc = frappe.new_doc("Item")
     item_doc.item_code = item
@@ -122,7 +122,7 @@ def create_test_item(
     return item_doc
 
 def create_test_sle_item(
-    item, sle_qty, sle_rate, src_warehouse, target_warehouse, sle_name
+    item: dict, sle_qty: float, sle_rate: float, src_warehouse: str, target_warehouse: str, sle_name: str
 ) -> dict:
     return {
         "item": item.name,
@@ -133,14 +133,14 @@ def create_test_sle_item(
         "name": sle_name,
     }
 
-def create_test_stock_entry(stock_entry_items, type):
+def create_test_stock_entry(stock_entry_items: list, type: str) -> None:
     doc = frappe.new_doc("Stock Entry")
     doc.date = today()
     doc.time = now()
     doc.type = type
 
-    for item in stock_entry_items:
-        doc.append("stock_entry_items", item)
+    for item_row in stock_entry_items:
+        doc.append("stock_entry_items", item_row)
 
     doc.insert(ignore_if_duplicate=True)
     doc.submit()

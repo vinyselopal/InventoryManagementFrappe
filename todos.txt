@@ -1,0 +1,4 @@
+- hard code values for tests
+- check data types for doc fields
+- pure functions
+- create more records in reports 
