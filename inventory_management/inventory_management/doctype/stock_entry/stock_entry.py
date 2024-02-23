@@ -65,7 +65,7 @@ class StockEntry(Document):
                 )
 
     def before_insert(self):
-        self.stock_entry_items = club_similar_item_rows(self.stock_entry_items)
+        club_similar_item_rows()
 
     def on_submit(self):
 
@@ -115,6 +115,17 @@ class StockEntry(Document):
                     self.time
                 )
 
+    def club_similar_item_rows():
+        dict_items = {}
+        for item_row in self.stock_entry_items:
+            current_item_warehouse_pair = (item_row.item, item_row.warehouse)
+            if not (current_item_warehouse_pair in dict_items):
+                dict_items[current_item_warehouse_pair] = item_row
+                continue
+            existing_item_row = dict_items[current_item_warehouse_pair]
+            existing_item_row.qty = existing_item_row.qty + item_row.qty
+            self.stock_entry_items.remove(item_row)
+
     def on_cancel(self):
         for item in self.stock_entry_items:
             receipt_valuation_rate = get_valuation_rate(item.item, item.rate, item.qty)
@@ -143,25 +154,9 @@ class StockEntry(Document):
                 )
 
 
-def club_similar_item_rows(stock_entry_items):
-    dict_items = {}
-    for item_row in stock_entry_items:
-        if not (item_row.item in dict_items):
-            dict_items[item_row.item] = item_row
-            continue
-        existing_item_row = dict_items[item_row.item]
-        existing_item_row.qty = existing_item_row.qty + item_row.qty
-        stock_entry_items.remove(item_row)
-    return stock_entry_items
 
 
-def validate_item_warehouses(se_items, msg, condition):
-    for item in se_items:
-        if condition(item):
-            frappe.throw(title="Error", msg=msg, exc=MandatoryWarehouseMissing)
-
-
-def create_sle(warehouse: str, qty: float, item: dict, valuation_rate: int, date: str, time: str) -> None:
+def create_sle(warehouse: str, qty: float, item: str, valuation_rate: int, date: str, time: str) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item
     sle.warehouse = warehouse
@@ -186,13 +181,13 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
         .where((StockLedgerEntry.item == item))
     ).run(as_dict=True)
 
-    denominator = (result[0].qty_change or 0) + item_qty
+    total_qty = (result[0].qty_change or 0) + item_qty
 
     if not denominator == 0:
         return (
             (
                 ((result[0].valuation_rate_sum or 0) + (item_rate * item_qty))
-                / denominator
+                / total_qty
             )
             if result
             else 0
@@ -200,9 +195,6 @@ def get_valuation_rate(item: str, item_rate, item_qty) -> float:
 
 
 def get_warehouse_balance(warehouse, item, stock_entry_items):
-    all_sles = frappe.get_all(
-        doctype="Stock Ledger Entry", fields=["qty_change", "item", "warehouse"]
-    )
 
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
     result = (
