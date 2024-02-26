@@ -4,7 +4,6 @@ from inventory_management.inventory_management.report.stock_balance.stock_balanc
     get_balance_qty_for_sle,
 )
 from inventory_management.inventory_management.doctype.stock_entry.test_stock_entry import (
-    create_test_parent_child_warehouses,
     create_test_item,
     create_test_stock_entry,
 )
@@ -33,9 +32,6 @@ class TestStockBalanceReport(FrappeTestCase):
         }
 
         create_test_stock_entry([stock_entry_item1], "Transfer")
-
-
-        sles = frappe.db.get_all("Stock Ledger Entry", fields=["item", "warehouse", "qty_change", "posting_time"], order_by="posting_time desc")
 
         last_sle = frappe.db.get_all(
                 "Stock Ledger Entry",
