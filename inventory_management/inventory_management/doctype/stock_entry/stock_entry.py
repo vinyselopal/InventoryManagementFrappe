@@ -25,7 +25,7 @@ class StockEntry(Document):
 
         for item_row in self.stock_entry_items:
             item_warehouse_balance = get_item_balance_for_warehouse(
-                item_row.source_warehouse, item_row.item, self.stock_entry_items
+                item_row.source_warehouse, item_row.item
             )
 
             if item_warehouse_balance < item_row.qty:
