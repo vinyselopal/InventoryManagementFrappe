@@ -74,6 +74,6 @@ def get_data(filters: dict):
         if filters.get(condition):
             query = query.where((Sle[condition] == filters.get(condition)))
 
-    sles = query.run(as_dict=True, debug=True)
+    sles = query.run(as_dict=True)
 
     return sles

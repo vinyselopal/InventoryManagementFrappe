@@ -80,7 +80,7 @@ def get_data(filters: dict):
         if filters.get(condition):
             query = query.where((Sle[condition] == filters.get(condition)))
 
-    sles = get_sles_with_balance_qty(query.run(as_dict=True, debug=True))
+    sles = get_sles_with_balance_qty(query.run(as_dict=True))
 
     return sles
 
