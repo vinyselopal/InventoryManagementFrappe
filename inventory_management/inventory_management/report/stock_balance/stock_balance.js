@@ -19,11 +19,13 @@ frappe.query_reports["Stock Balance"] = {
       fieldname: "to_date",
       label: __("To Date"),
       fieldtype: "Date",
+      default: frappe.datetime.get_today(),
     },
     {
       fieldname: "from_date",
       label: __("From Date"),
       fieldtype: "Date",
+      default: frappe.datetime.month_start(),
     },
   ],
   formatter: function (value, row, column, data, default_formatter) {
