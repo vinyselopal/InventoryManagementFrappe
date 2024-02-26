@@ -59,7 +59,7 @@ class StockEntry(Document):
                         exc=MandatoryWarehouseMissing,
                     )
 
-    def club_similar_item_rows(self, type: str) -> None:
+    def club_similar_item_rows(self) -> None:
         item_warehouse_combination_mapping = {}
 
         def add_to_dict(item_warehouse_combination_mapping, key):
@@ -72,11 +72,11 @@ class StockEntry(Document):
             self.stock_entry_items.remove(item_row)
 
         for item_row in self.stock_entry_items:
-            if type == "Consume":
+            if self.type == "Consume":
                 add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.source_warehouse))
-            if type == "Receive":
+            if self.type == "Receive":
                 add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.target_warehouse))
-            if type == "Transfer":
+            if self.type == "Transfer":
                 add_to_dict(
                     item_warehouse_combination_mapping,
                     (
@@ -87,7 +87,7 @@ class StockEntry(Document):
                 )
 
     def before_insert(self):
-        self.club_similar_item_rows(self.type)
+        self.club_similar_item_rows()
 
     def on_submit(self):
         for item_row in self.stock_entry_items:
