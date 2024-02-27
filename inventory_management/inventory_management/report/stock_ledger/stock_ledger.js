@@ -27,7 +27,14 @@ frappe.query_reports["Stock Ledger"] = {
       fieldtype: "Date",
       default: frappe.datetime.month_start()
     },
+    {
+      fieldname: "stock_entry",
+      label: __("Stock Entry"),
+      fieldtype: "Link",
+      options: "Stock Entry"
+    },
   ],
+  
   formatter: function (value, row, column, data, default_formatter) {
     value = default_formatter(value, row, column, data);
     if (column.fieldname == "qty_change" && data && data.qty_change < 0) {

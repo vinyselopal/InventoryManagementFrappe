@@ -41,6 +41,13 @@ def get_columns():
             "reqd": 1,
         },
         {
+            "fieldname": "stock_entry",
+            "label": _("Stock Entry"),
+            "fieldtype": "Link",
+            "options": "Stock Entry",
+            "reqd": 1,
+        },
+        {
             "fieldname": "posting_date",
             "label": _("Posting Date"),
             "fieldtype": "Date",
@@ -63,12 +70,16 @@ def get_data(filters: dict):
         Sle.warehouse,
         Sle.qty_change,
         Sle.valuation_rate,
+        Sle.stock_entry,
         Sle.posting_date,
-        Sle.posting_time
+        Sle.posting_time,
 	)
 
     if filters.get("to_date") and filters.get("from_date"):
         query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])
+
+    if filters.get("stock_entry"):
+        query = query.where(Sle.stock_entry == filters["stock_entry"])
 
     for condition in ["warehouse", "item"]:
         if filters.get(condition):

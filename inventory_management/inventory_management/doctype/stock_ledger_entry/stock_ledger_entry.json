@@ -11,7 +11,8 @@
   "qty_change",
   "valuation_rate",
   "posting_date",
-  "posting_time"
+  "posting_time",
+  "stock_entry"
  ],
  "fields": [
   {
@@ -49,11 +50,17 @@
    "fieldname": "posting_time",
    "fieldtype": "Time",
    "label": "Posting Time"
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Stock Entry",
+   "options": "Stock Entry"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-02 12:43:10.849256",
+ "modified": "2024-02-26 15:44:23.825377",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Ledger Entry",
