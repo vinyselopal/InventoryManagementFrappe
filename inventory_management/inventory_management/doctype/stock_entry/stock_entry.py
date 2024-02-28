@@ -17,9 +17,12 @@ class InsufficientItems(frappe.ValidationError):
 class StockEntry(Document):
     @frappe.whitelist()
     def get_last_sle_for_item_warehouse(self, item, warehouse):
-        sle = frappe.get_last_doc("Stock Ledger Entry", filters={"item": item, "warehouse": warehouse})
-        print('sle', sle)
-        return 0
+        last_valuation_rate = frappe.db.get_value(
+            "Stock Ledger Entry",
+            filters={"item": item, "warehouse": warehouse},
+            fieldname="valuation_rate",
+        )
+        return last_valuation_rate
 
     def validate(self):
         self.validate_balance_qty()
@@ -58,7 +61,10 @@ class StockEntry(Document):
                         exc=MandatoryWarehouseMissing,
                     )
             if self.type == "Transfer":
-                if item_row.target_warehouse == None or item_row.source_warehouse == None:
+                if (
+                    item_row.target_warehouse == None
+                    or item_row.source_warehouse == None
+                ):
                     frappe.throw(
                         title="Error",
                         msg="Please provide both source and target warehouses for the items",
@@ -79,9 +85,15 @@ class StockEntry(Document):
 
         for item_row in self.stock_entry_items:
             if self.type == "Consume":
-                add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.source_warehouse))
+                add_to_dict(
+                    item_warehouse_combination_mapping,
+                    (item_row.item, item_row.source_warehouse),
+                )
             if self.type == "Receive":
-                add_to_dict(item_warehouse_combination_mapping, (item_row.item, item_row.target_warehouse))
+                add_to_dict(
+                    item_warehouse_combination_mapping,
+                    (item_row.item, item_row.target_warehouse),
+                )
             if self.type == "Transfer":
                 add_to_dict(
                     item_warehouse_combination_mapping,
@@ -112,7 +124,7 @@ class StockEntry(Document):
                     receipt_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
             elif self.type == "Consume":
@@ -123,7 +135,7 @@ class StockEntry(Document):
                     consume_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
             else:
@@ -134,7 +146,7 @@ class StockEntry(Document):
                     receipt_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
                 create_sle(
                     item_row.source_warehouse,
@@ -143,13 +155,17 @@ class StockEntry(Document):
                     consume_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
     def on_cancel(self):
         for item_row in self.stock_entry_items:
-            receipt_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, item_row.qty)
-            consume_valuation_rate = get_valuation_rate(item_row.item, item_row.rate, -item_row.qty)
+            receipt_valuation_rate = get_valuation_rate(
+                item_row.item, item_row.rate, item_row.qty
+            )
+            consume_valuation_rate = get_valuation_rate(
+                item_row.item, item_row.rate, -item_row.qty
+            )
 
             if self.type == "Receive":
                 create_sle(
@@ -159,7 +175,7 @@ class StockEntry(Document):
                     consume_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
             elif self.type == "Consume":
@@ -170,7 +186,7 @@ class StockEntry(Document):
                     receipt_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
             else:
@@ -181,7 +197,7 @@ class StockEntry(Document):
                     consume_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
                 create_sle(
                     item_row.source_warehouse,
@@ -190,12 +206,18 @@ class StockEntry(Document):
                     receipt_valuation_rate,
                     self.date,
                     self.time,
-                    self.name
+                    self.name,
                 )
 
 
 def create_sle(
-    warehouse: str, qty: float, item: str, valuation_rate: int, date: str, time: str, stock_entry: str
+    warehouse: str,
+    qty: float,
+    item: str,
+    valuation_rate: int,
+    date: str,
+    time: str,
+    stock_entry: str,
 ) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item
@@ -232,7 +254,7 @@ def get_valuation_rate(item: str, item_rate: float, item_qty: float) -> float:
         )
 
 
-def get_item_balance_for_warehouse(warehouse: str, item: str) -> float :
+def get_item_balance_for_warehouse(warehouse: str, item: str) -> float:
 
     StockLedgerEntry = frappe.qb.DocType("Stock Ledger Entry")
 
