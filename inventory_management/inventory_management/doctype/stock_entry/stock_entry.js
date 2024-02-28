@@ -17,7 +17,7 @@ frappe.ui.form.on("Stock Entry Item", {
 });
 
 function onFieldChange(frm, cdt, cdn) {
-  child_doc = frappe.get_doc(cdt, cdn);
+  const child_doc = frappe.get_doc(cdt, cdn);
   if (
     frm.doc.type == "Consume" &&
     child_doc.item &&
