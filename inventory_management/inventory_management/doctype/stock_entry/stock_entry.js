@@ -22,8 +22,13 @@ function onFieldChange(frm, cdt, cdn) {
     frm.doc.type == "Consume" &&
     child_doc.item &&
     child_doc.source_warehouse
-    ) {
-    console.log("hii", child_doc.source_warehouse);
-    child_doc.rate = frm.call("get_last_sle_for_item_warehouse", child_doc.item, child_doc.source_warehouse);
+  ) {
+    frm.call(
+      "get_last_sle_for_item_warehouse",
+      child_doc.item,
+      child_doc.source_warehouse
+    ).then(r => {
+      console.log('response', r)
+    });
   }
 }
