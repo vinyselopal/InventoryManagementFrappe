@@ -15,6 +15,12 @@ class InsufficientItems(frappe.ValidationError):
 
 
 class StockEntry(Document):
+    @frappe.whitelist()
+    def get_last_sle_for_item_warehouse(self, item, warehouse):
+        print("warehouse", warehouse)
+        sle = frappe.get_last_doc("Stock Ledger Entry", filters={"item": item, "warehouse": warehouse})
+        return sle
+
     def validate(self):
         self.validate_balance_qty()
         self.validate_mandatory_warehouses()
