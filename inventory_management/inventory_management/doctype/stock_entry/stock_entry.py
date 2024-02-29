@@ -39,7 +39,7 @@ class StockEntry(Document):
 
             if item_warehouse_balance < item_row.qty:
                 frappe.throw(
-                    title="Error",
+                    title="Not sufficient balance",
                     msg="Warehouse balance lower than requested item quantity",
                     exc=InsufficientItems,
                 )
@@ -125,7 +125,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
             elif self.type == "Consume":
@@ -137,7 +137,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
             else:
@@ -149,7 +149,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
                 create_sle(
                     item_row.source_warehouse,
@@ -159,7 +159,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
     def on_cancel(self):
@@ -180,7 +180,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
             elif self.type == "Consume":
@@ -192,7 +192,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
             else:
@@ -204,7 +204,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
                 create_sle(
                     item_row.source_warehouse,
@@ -214,7 +214,7 @@ class StockEntry(Document):
                     self.date,
                     self.time,
                     self.name,
-                    item_row.rate
+                    item_row.rate,
                 )
 
 
@@ -226,7 +226,7 @@ def create_sle(
     date: str,
     time: str,
     stock_entry: str,
-    in_out_rate: float
+    in_out_rate: float,
 ) -> None:
     sle = frappe.new_doc("Stock Ledger Entry")
     sle.item = item
