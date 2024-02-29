@@ -45,6 +45,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Source Warehouse",
+   "mandatory_depends_on": "\"eval: parent.type === 'Consume' || parent.type === 'Transfer'\"",
    "options": "Warehouse"
   },
   {
@@ -52,13 +53,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Target Warehouse",
+   "mandatory_depends_on": "\"eval: parent.type === 'Receive' || parent.type === 'Transfer'\"",
    "options": "Warehouse"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-02-02 12:47:07.735971",
+ "modified": "2024-02-29 16:10:27.364554",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Entry Item",
