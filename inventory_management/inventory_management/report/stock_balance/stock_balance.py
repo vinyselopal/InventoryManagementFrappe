@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.query_builder.functions import Sum
 
+
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
@@ -54,7 +55,8 @@ def get_data(filters: dict):
     from_date = frappe.format(filters.get("from_date"), {"date_format": "yyyy-MM-dd"})
     to_date = frappe.format(filters.get("to_date"), {"date_format": "yyyy-MM-dd"})
 
-    stock_balance = frappe.db.sql(f"""
+    stock_balance = frappe.db.sql(
+        f"""
         SELECT
             item,
             warehouse,
@@ -68,7 +70,9 @@ def get_data(filters: dict):
             item, warehouse, posting_date
         ORDER BY
             posting_date DESC
-    """, as_dict=True)
+    """,
+        as_dict=True,
+    )
 
     print("stock balance", stock_balance)
     return stock_balance

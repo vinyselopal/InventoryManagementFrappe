@@ -34,11 +34,11 @@ class TestStockBalanceReport(FrappeTestCase):
         create_test_stock_entry([stock_entry_item1], "Transfer")
 
         last_sle = frappe.db.get_all(
-                "Stock Ledger Entry",
-                filters={"item": item1.name, "warehouse": wh1},
-                order_by="posting_time desc",
-                fields=["item", "warehouse", "qty_change", "posting_time"]
-            )[0]
+            "Stock Ledger Entry",
+            filters={"item": item1.name, "warehouse": wh1},
+            order_by="posting_time desc",
+            fields=["item", "warehouse", "qty_change", "posting_time"],
+        )[0]
 
         balance_qty = get_balance_qty_for_sle(last_sle)
 

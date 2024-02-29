@@ -80,7 +80,7 @@ def get_data(filters: dict):
         Sle.stock_entry,
         Sle.posting_date,
         Sle.posting_time,
-	)
+    )
 
     if filters.get("to_date") and filters.get("from_date"):
         query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])

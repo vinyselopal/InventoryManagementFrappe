@@ -23,15 +23,14 @@ function onFieldChange(frm, cdt, cdn) {
     child_doc.item &&
     child_doc.source_warehouse
   ) {
-    frm.call(
-      "get_last_sle_for_item_warehouse",
-      {
+    frm
+      .call("get_last_sle_for_item_warehouse", {
         item: child_doc.item,
-        warehouse: child_doc.source_warehouse
-      }
-    ).then(r => {
-      child_doc.rate = r.message
-      frm.refresh()
-    });
+        warehouse: child_doc.source_warehouse,
+      })
+      .then((r) => {
+        child_doc.rate = r.message;
+        frm.refresh();
+      });
   }
 }

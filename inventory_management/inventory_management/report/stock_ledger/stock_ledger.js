@@ -19,19 +19,19 @@ frappe.query_reports["Stock Ledger"] = {
       fieldname: "from_date",
       label: __("From Date"),
       fieldtype: "Date",
-      default: frappe.datetime.month_start()
+      default: frappe.datetime.month_start(),
     },
     {
       fieldname: "to_date",
       label: __("To Date"),
       fieldtype: "Date",
-      default: frappe.datetime.get_today()
+      default: frappe.datetime.get_today(),
     },
     {
       fieldname: "stock_entry",
       label: __("Stock Entry"),
       fieldtype: "Link",
-      options: "Stock Entry"
+      options: "Stock Entry",
     },
   ],
 
