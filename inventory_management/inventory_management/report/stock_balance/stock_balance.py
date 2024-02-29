@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-
+from frappe.query_builder.functions import Sum
 
 def execute(filters=None):
     columns = get_columns()
@@ -29,12 +29,6 @@ def get_columns():
             "reqd": 1,
         },
         {
-            "fieldname": "qty_change",
-            "label": _("Qty Change"),
-            "fieldtype": "Float",
-            "reqd": 1,
-        },
-        {
             "fieldname": "balance_qty",
             "label": _("Balance Qty"),
             "fieldtype": "Float",
@@ -48,14 +42,8 @@ def get_columns():
         },
         {
             "fieldname": "posting_date",
-            "label": _("Date"),
+            "label": _("Posting Date"),
             "fieldtype": "Date",
-            "reqd": 1,
-        },
-        {
-            "fieldname": "posting_time",
-            "label": _("Time"),
-            "fieldtype": "Time",
             "reqd": 1,
         },
     ]
@@ -63,47 +51,24 @@ def get_columns():
 
 
 def get_data(filters: dict):
-    Sle = frappe.qb.DocType("Stock Ledger Entry")
-    query = frappe.qb.from_(Sle).select(
-        Sle.item,
-        Sle.warehouse,
-        Sle.qty_change,
-        Sle.valuation_rate,
-        Sle.posting_date,
-        Sle.posting_time
-	)
+    from_date = frappe.format(filters.get("from_date"), {"date_format": "yyyy-MM-dd"})
+    to_date = frappe.format(filters.get("to_date"), {"date_format": "yyyy-MM-dd"})
 
-    if filters.get("to_date") and filters.get("from_date"):
-        query = query.where(Sle.posting_date[filters["from_date"] : filters["to_date"]])
+    stock_balance = frappe.db.sql(f"""
+        SELECT
+            item,
+            warehouse,
+            SUM(qty_change) AS balance_qty,
+            posting_date
+        FROM
+            `tabStock Ledger Entry`
+        WHERE
+            posting_date >= '{from_date}' AND posting_date <= '{to_date}'
+        GROUP BY
+            item, warehouse, posting_date
+        ORDER BY
+            posting_date DESC
+    """, as_dict=True)
 
-    for condition in ["warehouse", "item"]:
-        if filters.get(condition):
-            query = query.where((Sle[condition] == filters.get(condition)))
-
-    sles = get_sles_with_balance_qty(query.run(as_dict=True))
-
-    return sles
-
-
-def get_sles_with_balance_qty(sles: list):
-    for sle in sles:
-        balance_qty = get_balance_qty_for_sle(sle)
-        sle.balance_qty = balance_qty
-
-    return sles
-
-
-def get_balance_qty_for_sle(sle: dict) -> float:
-    prev_sles = frappe.db.get_all(
-        "Stock Ledger Entry",
-        filters={
-            "posting_time": ("<=", sle.posting_time),
-            "item": sle.item,
-            "warehouse": sle.warehouse,
-        },
-        fields=["qty_change", "item", "warehouse"],
-    )
-
-    balance_qty = sum(prev_sle.qty_change for prev_sle in prev_sles)
-
-    return balance_qty
+    print("stock balance", stock_balance)
+    return stock_balance

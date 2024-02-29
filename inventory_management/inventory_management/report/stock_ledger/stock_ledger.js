@@ -16,16 +16,16 @@ frappe.query_reports["Stock Ledger"] = {
       options: "Warehouse",
     },
     {
-      fieldname: "to_date",
-      label: __("To Date"),
-      fieldtype: "Date",
-      default: frappe.datetime.get_today()
-    },
-    {
       fieldname: "from_date",
       label: __("From Date"),
       fieldtype: "Date",
       default: frappe.datetime.month_start()
+    },
+    {
+      fieldname: "to_date",
+      label: __("To Date"),
+      fieldtype: "Date",
+      default: frappe.datetime.get_today()
     },
     {
       fieldname: "stock_entry",
@@ -34,7 +34,7 @@ frappe.query_reports["Stock Ledger"] = {
       options: "Stock Entry"
     },
   ],
-  
+
   formatter: function (value, row, column, data, default_formatter) {
     value = default_formatter(value, row, column, data);
     if (column.fieldname == "qty_change" && data && data.qty_change < 0) {
