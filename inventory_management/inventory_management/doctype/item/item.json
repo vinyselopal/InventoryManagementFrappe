@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{item_code}",
+ "creation": "2024-01-11 15:09:04.062308",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "details_tab",
+  "section_break_hh6o",
+  "column_break_tdxp",
+  "item_code",
+  "item_name",
+  "description",
+  "column_break_ivkf",
+  "opening_warehouse",
+  "opening_qty",
+  "opening_valuation_rate",
+  "tab_2_tab"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_hh6o",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "opening_warehouse",
+   "fieldtype": "Link",
+   "label": "Opening Warehouse",
+   "mandatory_depends_on": "doc.opening_qty || doc.opening_valuation_rate;",
+   "options": "Warehouse",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "opening_qty",
+   "fieldtype": "Int",
+   "label": "Opening Qty",
+   "mandatory_depends_on": "doc.opening_warehouse || doc.opening_valuation_rate;",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "opening_valuation_rate",
+   "fieldtype": "Currency",
+   "label": "Opening Valuation Rate",
+   "mandatory_depends_on": "doc.opening_warehouse || doc.opening_qty;",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "tab_2_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tab 2"
+  },
+  {
+   "fieldname": "details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Details"
+  },
+  {
+   "columns": 2,
+   "fieldname": "column_break_tdxp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ivkf",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-02-29 11:05:34.290424",
+ "modified_by": "Administrator",
+ "module": "Inventory Management",
+ "name": "Item",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "item_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "item_name"
+}
