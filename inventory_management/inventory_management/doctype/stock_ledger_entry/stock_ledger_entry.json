@@ -12,7 +12,8 @@
   "valuation_rate",
   "posting_date",
   "posting_time",
-  "stock_entry"
+  "stock_entry",
+  "in_out_rate"
  ],
  "fields": [
   {
@@ -56,11 +57,16 @@
    "fieldtype": "Link",
    "label": "Stock Entry",
    "options": "Stock Entry"
+  },
+  {
+   "fieldname": "in_out_rate",
+   "fieldtype": "Float",
+   "label": "In Out Rate"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-02-26 15:44:23.825377",
+ "modified": "2024-02-29 09:59:22.329478",
  "modified_by": "Administrator",
  "module": "Inventory Management",
  "name": "Stock Ledger Entry",

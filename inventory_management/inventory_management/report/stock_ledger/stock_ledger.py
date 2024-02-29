@@ -35,6 +35,12 @@ def get_columns():
             "reqd": 1,
         },
         {
+            "fieldname": "in_out_rate",
+            "label": _("In Out Rate"),
+            "fieldtype": "Float",
+            "reqd": 1,
+        },
+        {
             "fieldname": "valuation_rate",
             "label": _("Valuation Rate"),
             "fieldtype": "Currency",
@@ -69,6 +75,7 @@ def get_data(filters: dict):
         Sle.item,
         Sle.warehouse,
         Sle.qty_change,
+        Sle.in_out_rate,
         Sle.valuation_rate,
         Sle.stock_entry,
         Sle.posting_date,
